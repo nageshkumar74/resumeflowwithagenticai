@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ChatOpenAI } from "@langchain/openai";
-import {
-  HumanMessage,
-  SystemMessage,
-} from "@langchain/core/messages";
 
-const AGENT_SYSTEM_TEMPLATE = `
-You are ResumeFlow, an intelligent and supportive AI assistant that helps users improve resumes.
+import Groq from "groq-sdk";
 
-Your responsibilities:
-- Analyze resumes
-- Suggest ATS-friendly improvements
-- Rewrite resume bullet points
-- Help tailor resumes for job descriptions
-- Provide concise and professional suggestions
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
-Rules:
-- Do not invent fake experience
-- Ask for clarification when needed
-- Be encouraging and professional
+const SYSTEM_PROMPT = `
+You are ResumeFlow AI assistant helping users improve resumes.
 `;
 
 export async function POST(req: NextRequest) {
@@ -27,34 +16,31 @@ export async function POST(req: NextRequest) {
 
     const { messages } = body;
 
-    const llm = new ChatOpenAI({
-      model: "gpt-4o-mini",
-      apiKey: process.env.OPENAI_API_KEY,
-      temperature: 0.7,
-    });
+    const completion =
+      await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
 
-    const formattedMessages = [
-      new SystemMessage(AGENT_SYSTEM_TEMPLATE),
+        messages: [
+          {
+            role: "system",
+            content: SYSTEM_PROMPT,
+          },
 
-      ...messages.map(
-        (message: { role: string; content: string }) =>
-          new HumanMessage(message.content)
-      ),
-    ];
-
-    const response = await llm.invoke(formattedMessages);
+          ...messages,
+        ],
+      });
 
     return NextResponse.json({
-      success: true,
-      content: response.content,
+      content:
+        completion.choices[0]?.message?.content ||
+        "No response",
     });
   } catch (error: any) {
-    console.error("Chat API Error:", error);
+    console.error(error);
 
     return NextResponse.json(
       {
-        success: false,
-        error: error.message || "Something went wrong",
+        error: error.message,
       },
       {
         status: 500,
