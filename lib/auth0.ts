@@ -6,4 +6,22 @@ export const auth0 = new Auth0Client({
   clientSecret: process.env.AUTH0_CLIENT_SECRET!,
   secret: process.env.AUTH0_SECRET!,
   appBaseUrl: process.env.APP_BASE_URL!,
-});
+
+authorizationParameters: {
+    scope: `
+      openid
+      profile
+      email
+      https://www.googleapis.com/auth/documents
+      https://www.googleapis.com/auth/drive.file
+      https://www.googleapis.com/auth/gmail.compose
+      https://www.googleapis.com/auth/gmail.readonly
+      
+
+    `,
+  },
+})
+
+
+
+  
